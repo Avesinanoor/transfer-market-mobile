@@ -485,4 +485,106 @@ void main() {
 Jika  mengubah warna background AppBar dari `Theme.of(context).colorScheme.primary` menjadi `Colors.red`, hot reload sudah cukup. Namun jika kita mengubah nilai `npm` atau `nama` di MyHomePage, kita perlu hot restart karena nilai tersebut di set saat object dibuat.
 
 
+<details>
+<summary>Tugas 8</summary>
+  
+### Jelaskan perbedaan antara Navigator.push() dan Navigator.pushReplacement() pada Flutter. Dalam kasus apa sebaiknya masing-masing digunakan pada aplikasi Football Shop kamu?
+Perbedaan Inti
 
+#### Navigator.push()
+- Menambahkan (menumpuk) route baru di atas stack.
+- Tombol back akan kembali ke halaman sebelumnya.
+- Cocok untuk navigasi alur (detail/form).
+
+#### Navigator.pushReplacement()
+- Mengganti route saat ini dengan route baru (hapus halaman sekarang).
+- Tombol back tidak kembali ke halaman yang diganti; kembali ke route di bawahnya (jika ada).
+- Cocok untuk berpindah “top‑level” tanpa menumpuk riwayat yang tidak perlu.
+Penggunaan di Aplikasi Ini
+
+- Tombol/Item “Register Player” dari home = gunakan push()
+
+Alasan: pengguna biasanya ingin bisa kembali ke Beranda lewat tombol back setelah mengisi/menutup form.
+```dart
+            if (item.name == 'Register Player') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddProductPage()),
+            );
+```
+- Drawer "Register Player" = gunakan pushReplacement
+
+Item drawer umumnya diperlakukan sebagai tujuan top‑level; mengganti halaman saat ini mencegah stack menumpuk (berpindah section
+```dart
+          ListTile(
+            leading: const Icon(Icons.add_circle),
+            title: const Text('Register Player'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushReplacementNamed('/add');
+            },
+          ),
+```
+
+
+### Bagaimana memanfaatkan hierarchy widget seperti Scaffold, AppBar, dan Drawer untuk membangun struktur halaman yang konsisten di seluruh aplikasi?
+Scaffold adalah kerangka utama setiap halaman yang memberi slot konsisten untuk AppBar, Drawer, dan body. Dengan menempatkan AppBar dan Drawer yang seragam pada semua halaman, Anda menjaga tampilan, pola navigasi, dan perilaku aplikasi tetap konsisten. AppBar digunakan untuk judul dan aksi global (mis. search atau save) yang distandarkan melalui Theme, sedangkan Drawer menjadi pintu menuju destinasi top-level (seperti Halaman Utama dan Tambah Produk). Konten spesifik halaman hidup di body. Untuk menghindari overflow, bungkus body dengan SafeArea dan SingleChildScrollView saat konten bisa memanjang, dan atur widget scrollable turunan seperti GridView agar tidak menguasai tinggi tanpa batas. Pusatkan rute di MaterialApp (named routes) agar navigasi Drawer dan tombol-tombol halaman mudah dipelihara.
+
+- Gunakan satu Drawer reusable di semua halaman: pasang di setiap Scaffold via drawer: const AppDrawer().
+- Standarisasi AppBar: judul dan warna dari Theme; aksi hanya yang relevan per halaman.
+- Wrapper AppScaffold (menerima title dan body) untuk menghindari duplikasi AppBar/Drawer.
+
+### Dalam konteks desain antarmuka, apa kelebihan menggunakan layout widget seperti Padding, SingleChildScrollView, dan ListView saat menampilkan elemen-elemen form? Berikan contoh penggunaannya dari aplikasi kamu.
+
+- Menggunakan layout widget seperti Padding, SingleChildScrollView, dan ListView membuat form lebih nyaman dipakai, adaptif, dan bebas error layout.
+
+#### Padding
+- Kelebihan: memberi ruang napas antar elemen, meningkatkan keterbacaan dan akurasi tap; menjaga ritme visual yang konsisten.
+- Contoh: membungkus body beranda dengan Padding sehingga konten tidak menempel tepi layar 
+```dart
+                const Padding(padding: EdgeInsets.all(3)),
+                Text(
+                  item.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white),
+                ),
+```
+#### SingleChildScrollView
+
+- Kelebihan: mencegah “bottom overflow” saat konten melebihi tinggi layar atau ketika keyboard muncul; cocok untuk form dengan jumlah field sedang.
+- Contoh:
+Halaman form membungkus seluruh Form dengan scroll agar aman dari overflow
+```dart
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+            ...
+        )
+```
+
+#### ListView
+- Kelebihan: list yang panjang/berulang dengan performa baik (item builder, lazy rendering), separator mudah, dan integrasi dengan sliver; lebih cocok daripada Column untuk form yang sangat panjang atau dinamis.
+Contoh:
+```dart
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+                ...
+          )  
+```
+### Bagaimana menyesuaikan warna tema agar aplikasi Football Shop memiliki identitas visual yang konsisten dengan brand toko?
+Agar identitas brand konsisten, pusatkan semua warna di Theme, lalu pastikan widget mengambil warna dari Theme. Buat satu sumber warna (ThemeData/ColorScheme), terapkan ke AppBar, tombol, input, dan komponen lain sehingga gaya menyatu di seluruh halaman.
+```dart
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue)
+        .copyWith(secondary: Colors.blueAccent[400]), 
+```
+</details>

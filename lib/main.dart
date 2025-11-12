@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:transfer_market/menu.dart';
+import 'package:transfer_market/screens/add_product_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,6 +35,10 @@ class MyApp extends StatelessWidget {
         .copyWith(secondary: Colors.blueAccent[400]),      
       ),
       home: MyHomePage(),
+      routes: {
+        '/home': (context) => MyHomePage(),
+        '/add': (context) => const AddProductPage(),
+      },
     );
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:transfer_market/screens/add_product_page.dart';
+import 'package:transfer_market/widgets/app_drawer.dart';
 
 class ItemHomepage {
  final String name;
@@ -16,10 +18,9 @@ class MyHomePage extends StatelessWidget {
 
 
     final List<ItemHomepage> items = [
-    ItemHomepage("All Players", Icons.list_alt, Colors.blue),
-    ItemHomepage("My Players", Icons.group, Colors.green),
-    ItemHomepage("Register Player", Icons.person_add, Colors.red),
-    
+      ItemHomepage("All Players", Icons.list_alt, Colors.blue),
+      ItemHomepage("My Players", Icons.group, Colors.green),
+      ItemHomepage("Register Player", Icons.add_circle, Colors.red),
     ];
 
     @override
@@ -28,9 +29,8 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       // AppBar adalah bagian atas halaman yang menampilkan judul.
       appBar: AppBar(
-        // Judul aplikasi "Football News" dengan teks putih dan tebal.
         title: const Text(
-          'Football News',
+          'Transfer Market',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -39,8 +39,10 @@ class MyHomePage extends StatelessWidget {
         // Warna latar belakang AppBar diambil dari skema warna tema aplikasi.
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      // Body halaman dengan padding di sekelilingnya.
-      body: Padding(
+      drawer: const AppDrawer(),
+      // Body halaman dibuat scrollable untuk mencegah overflow.
+      body: SingleChildScrollView(
+        child: Padding(
         padding: const EdgeInsets.all(16.0),
         // Menyusun widget secara vertikal dalam sebuah kolom.
         child: Column(
@@ -77,9 +79,25 @@ class MyHomePage extends StatelessWidget {
                     ),
                   ),
 
+                  const SizedBox(height: 12.0),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddProductPage()),
+                        );
+                      },
+                      icon: const Icon(Icons.add_circle),
+                      label: const Text('Register Player'),
+                    ),
+                  ),
+
                   // Grid untuk menampilkan ItemCard dalam bentuk grid 3 kolom.
                   GridView.count(
-                    primary: true,
+                    primary: false,
+                    physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
@@ -97,6 +115,7 @@ class MyHomePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
 
@@ -154,12 +173,19 @@ class ItemCard extends StatelessWidget {
       child: InkWell(
         // Aksi ketika kartu ditekan.
         onTap: () {
-          // Menampilkan pesan SnackBar saat kartu ditekan.
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!"))
+          if (item.name == 'Register Player') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddProductPage()),
             );
+          } else {
+            // Menampilkan pesan SnackBar saat tombol lain ditekan.
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!")),
+              );
+          }
         },
         // Container untuk menyimpan Icon dan Text
         child: Container(
