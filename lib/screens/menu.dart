@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:transfer_market/screens/add_product_page.dart';
+import 'package:transfer_market/screens/player_list.dart';
 import 'package:transfer_market/widgets/app_drawer.dart';
 
 class ItemHomepage {
@@ -178,12 +179,33 @@ class ItemCard extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (context) => const AddProductPage()),
             );
+          } else if (item.name == 'All Players') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PlayerListPage(
+                  filter: 'all',
+                  title: 'All Players',
+                ),
+              ),
+            );
+          } else if (item.name == 'My Players') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PlayerListPage(
+                  filter: 'my',
+                  title: 'My Players',
+                ),
+              ),
+            );
           } else {
-            // Menampilkan pesan SnackBar saat tombol lain ditekan.
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
-                SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!")),
+                SnackBar(
+                  content: Text("Kamu telah menekan tombol ${item.name}!"),
+                ),
               );
           }
         },

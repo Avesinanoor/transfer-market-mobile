@@ -1,4 +1,5 @@
-Tugas 7
+<details>
+<summary> Tugas 7 </summary>
  ### Jelaskan apa itu widget tree pada Flutter dan bagaimana hubungan parent-child (induk-anak) bekerja antar widget.
 
 Widget tree adalah struktur hierarki berbentuk pohon yang menggambarkan bagaimana widget di Flutter disusun dan saling berhubungan. Setiap aplikasi Flutter pada dasarnya adalah sebuah widget tree yang dimulai dari widget root dan bercabang ke widget child lainnya.
@@ -483,7 +484,9 @@ void main() {
 
 
 Jika  mengubah warna background AppBar dari `Theme.of(context).colorScheme.primary` menjadi `Colors.red`, hot reload sudah cukup. Namun jika kita mengubah nilai `npm` atau `nama` di MyHomePage, kita perlu hot restart karena nilai tersebut di set saat object dibuat.
+</details>
 
+</details>
 
 <details>
 <summary>Tugas 8</summary>
@@ -588,3 +591,56 @@ Agar identitas brand konsisten, pusatkan semua warna di Theme, lalu pastikan wid
         .copyWith(secondary: Colors.blueAccent[400]), 
 ```
 </details>
+
+<details>
+<summary> Tugas 9 </summary>
+
+### 1. Mengapa perlu membuat model Dart saat mengambil/mengirim data JSON?
+
+Model Dart (misalnya `PlayerEntry`) memberi tipe yang jelas, memanfaatkan null-safety, dan memusatkan logika `fromJson`/`toJson` di satu tempat. Dengan begitu, kesalahan tipe, salah key, dan nilai null bisa ditangani rapi, sementara kode UI cukup memakai properti seperti `player.name` tanpa berurusan langsung dengan `Map<String, dynamic>`. Jika hanya memakai `Map<String, dynamic>`, kode cepat penuh pengecekan null, rawan error runtime, dan lebih sulit untuk lanjut develop ketika struktur JSON backend berubah.
+
+### 2. Fungsi package `http` dan `CookieRequest`, serta perbedaan perannya
+
+`http` adalah klien HTTP dasar untuk melakukan request GET/POST biasa: kita mengatur URL, header, dan parsing JSON secara manual. Package ini cocok untuk endpoint publik atau panggilan stateless yang tidak butuh sesi login. `CookieRequest` (dari `pbp_django_auth`) merupakan fungsi serupa, tetapi sekaligus mengelola cookie sesi Django (login/logout, CSRF, sessionid) dan otomatis mengirimkannya di setiap request. Dalam tugas ini, `CookieRequest` dipakai untuk semua fitur yang butuh autentikasi (register, login, mengambil daftar player milik user, .), sehingga Flutter tetap terautentikasi di backend tanpa harus mengatur cookie dan header secara manual seperti saat memakai `http` murni.
+
+### 3. Mengapa instance `CookieRequest` perlu dibagikan ke semua komponen?
+
+`CookieRequest` menyimpan state sesi (cookie login, CSRF token, dll.), sehingga jika setiap widget membuat instance sendiri, sesi tidak akan konsisten dan backend menganggap request‑request itu seperti user berbeda (atau belum login). Dengan membagikan satu instance global melalui `Provider`, semua halaman (login, daftar player, detail, form, dsb.) memakai klien yang sama dan otomatis berbagi status login dan cookie yang sama, sesuai konsep satu sesi user di Django.
+
+### 4. Konfigurasi konektivitas Flutter–Django dan konsekuensinya
+
+Untuk Flutter berkomunikasi dengan Django, backend harus mengenali asal request dan mengizinkan cookie lintas-origin:
+
+- `10.0.2.2` di `ALLOWED_HOSTS` diperlukan agar Django menerima request dari emulator Android, karena `10.0.2.2` adalah  `localhost` untuk emulator. Tanpa ini, request dari emulator akan ditolak (Bad Request/DisallowedHost).
+- CORS (`CORS_ALLOW_ALL_ORIGINS`, `CORS_ALLOW_CREDENTIALS`) perlu diaktifkan karena Flutter Web berjalan di origin/port berbeda dari Django. Jika CORS tidak sesuai, browser akan memblokir request atau menolak mengirim cookie, sehingga login tidak pernah berhasil dan banyak request gagal dengan error CORS.
+- Pengaturan cookie seperti `CSRF_COOKIE_SAMESITE='None'`, `SESSION_COOKIE_SAMESITE='None'`, dan flag `Secure` memastikan cookie Django boleh dikirim pada konteks lintas-origin (misalnya domain deployment dan origin Flutter berbeda). Jika ini salah, cookie sesi/CSRF tidak terkirim, sehingga autentikasi gagal atau selalu dianggap logout.
+- Di Android, izin internet (`<uses-permission android:name="android.permission.INTERNET" />`) wajib ditambahkan di `AndroidManifest.xml`. Tanpa ini, semua request jaringan dari aplikasi akan gagal (network error).
+
+Jika salah satu konfigurasi ini tidak dilakukan dengan benar: Flutter tidak bisa login meski kredensial benar, request API selalu gagal (CORS error, 403, atau network error), atau backend Django menolak host/asal request.
+
+### 5. Mekanisme pengiriman data dari input hingga tampil di Flutter
+
+Alur: 
+(1) User mengisi form di Flutter (misalnya register player/news), lalu menekan tombol submit. 
+(2) Flutter membentuk objek Dart (misalnya `PlayerEntry` atau payload `Map<String, dynamic>`) dan mengirimkannya ke Django lewat `CookieRequest.postJson`/`post` ke endpoint tertentu. 
+(3) Django view membaca body request, memvalidasi data, menyimpan objek model (`Player`) di database, lalu mengembalikan respons JSON (status + data terbaru). 
+(4) Flutter menerima JSON respons, memetakan kembali ke model Dart melalui `fromJson`, dan memanggil `setState` atau membangun ulang widget yang menampilkan data tersebut (misalnya list atau detail page). Untuk halaman list (All/My Player), Flutter kemudian memanggil endpoint GET JSON (seperti `/api/players/`) untuk mengambil snapshot terbaru dan menampilkan card‑card berdasarkan data model yang sudah diparse.
+
+### 6. Mekanisme autentikasi dari login, register, hingga logout
+
+Alurnya: user mengisi username/password di Flutter (RegisterPage atau LoginPage), lalu Flutter mengirim data ke Django melalui `CookieRequest.postJson` atau `request.login` menuju endpoint `/auth/register/` atau `/auth/login/`. Pada register, Django memvalidasi input (password cocok, username unik), membuat objek `User`, dan mengembalikan JSON status sukses/gagal yang dipakai Flutter untuk menampilkan SnackBar dan mengarahkan ke halaman login. Pada login, Django menjalankan `authenticate` dan `auth_login` jika kredensial benar; cookie sesi (sessionid, CSRF) dikirim kembali dan disimpan oleh `CookieRequest`. Jika login berhasil, Flutter mengecek `request.loggedIn`, menampilkan pesan sukses, dan melakukan `Navigator.pushReplacement` ke menu (`MyHomePage`), yang kemudian bisa memanggil endpoint terproteksi (misalnya `/api/players/`). Saat logout, Flutter memanggil endpoint `/auth/logout/`, Django menjalankan `auth_logout` untuk menghapus sesi dan mengembalikan JSON, lalu Flutter menganggap user sudah logout dan dapat mengarahkan kembali ke halaman login sehingga akses ke endpoint yang butuh autentikasi kembali diblokir.
+
+### 7. Step by Step Checklist
+
+1. Menambahkan app `authentication` di Django `transfer-market`, membuat view JSON untuk `login`, `register`, dan `logout`, lalu mendaftarkan `path('auth/', include('authentication.urls'))` di `transfer_market/urls.py`.
+2. Mengonfigurasi konektivitas: mengisi `.env`, menambah `10.0.2.2` ke `ALLOWED_HOSTS`, mengaktifkan CORS dan pengaturan cookie (SameSite, Secure) di `settings.py`, serta menambahkan permission internet di `AndroidManifest.xml`.
+3. Tambah `CookieRequest` di Flutter (`main.dart`) dengan `Provider`, lalu membuat halaman `LoginPage` dan `RegisterPage` yang memanggil endpoint Django menggunakan `request.login` dan `request.postJson`.
+4. Membuat model Dart `PlayerEntry` yang menyesuaikan field model `Player` di Django, termasuk penyesuaian tipe (misalnya `height` sebagai `double`) dan key JSON (`is_featured`, `user_username`, dll.).
+5. Mengimplementasikan endpoint JSON untuk daftar dan detail player di Django (`get_players_json`, `show_json_by_id`), kemudian membuat `PlayerListPage` (All/My Players) dan `PlayerCard` di Flutter yang memanggil `/api/players/?filter=...` dan menampilkan semua field penting pada card.
+6. Membuat halaman detail `PlayerDetailPage` di Flutter yang menerima objek `PlayerEntry` dari list, menampilkan seluruh atribut (name, price, description, thumbnail, category, is_featured, club, nationality, height, registered by), dan menyediakan tombol kembali.
+7. Menghubungkan semua halaman Flutter lewat `menu.dart` dan `AppDrawer` (navigasi ke All Players, My Players, Register Player), lalu melakukan pengujian end-to-end: registrasi akun, login, menambah player, melihat list All/My Player, dan cek logout.
+</details>
+
+
+
+
